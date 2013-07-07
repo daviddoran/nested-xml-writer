@@ -14,20 +14,26 @@ would allow arbitrarily nested XML to be created fluently. The result is that:
 
 The `NestedXMLWriter` constructor takes an XMLWriter, which will actually write the XML.
 
-    # Create an in-memory XML writer (with pretty-printing)
-    $writer = new XMLWriter();
-    $writer->openMemory();
-    $writer->setIndent(true);
+```php
+# Create an in-memory XML writer (with pretty-printing)
+$writer = new XMLWriter();
+$writer->openMemory();
+$writer->setIndent(true);
+```
 
-    $xml = new NestedXMLWriter($writer);
+$xml = new NestedXMLWriter($writer);
 
 To create an element, simply call the method of the same name:
 
-    $xml->Root(); # <Root/>
+```php
+$xml->Root(); # <Root/>
+```
 
 Use the following syntax if the element name would be an invalid PHP method:
 
-    $xml->{"Root-Element"}(); # <Root-Element/>
+```php
+$xml->{"Root-Element"}(); # <Root-Element/>
+```
 
 There are three optional parameters that can be given **in any order**:
 
@@ -37,29 +43,39 @@ There are three optional parameters that can be given **in any order**:
 
 An element with contents:
 
-    $xml->Snippet("The end."); # <Snippet>The end.</Snippet>
+```php
+$xml->Snippet("The end."); # <Snippet>The end.</Snippet>
+```
 
 An element with attributes:
 
-    $xml->Book(array("title" => "Book 1", "order" => 1)); # <Book title="Book 1" order="1"/>
+```php
+$xml->Book(array("title" => "Book 1", "order" => 1)); # <Book title="Book 1" order="1"/>
+```
 
 An element with attributes and contents:
 
-    $xml->Book("It all began...", array("title" => "A Story")); # <Book title="A Story">It all began...</Book>
+```php
+$xml->Book("It all began...", array("title" => "A Story")); # <Book title="A Story">It all began...</Book>
+```
 
 An element with children:
 
-    $xml->Book(array("title" => "A Story"), function ($Book) {
-        $Book->Author("John Doe", array("surname" => "Doe"));
-        $Book->Author("Jane Smith", array("surname" => "Smith"));
-    });
+```php
+$xml->Book(array("title" => "A Story"), function ($Book) {
+    $Book->Author("John Doe", array("surname" => "Doe"));
+    $Book->Author("Jane Smith", array("surname" => "Smith"));
+});
+```
 
 Will give the following XML:
 
-    <Book title="A Story">
-     <Author surname="Doe">John Doe</Author>
-     <Author surname="Smith">Jane Smith</Author>
-    </Book>
+```xml
+<Book title="A Story">
+    <Author surname="Doe">John Doe</Author>
+    <Author surname="Smith">Jane Smith</Author>
+</Book>
+```
 
 ## Installing
 
@@ -86,50 +102,58 @@ closures (instead providing only anonymous functions with explicit capture).
 
 Assuming the following array of data (and a NestedXMLWriter instance `$nestedXMLWriter`):
 
-    $books = array(
-        array("title" => "A Brief Guide To Books", "authors" => array("John Doe", "Alan A. Ableson")),
-        array("title" => "A Briefer Guide To Books About Briefs", "authors" => array("John Boxer")),
-    );
+```php
+$books = array(
+    array("title" => "A Brief Guide To Books", "authors" => array("John Doe", "Alan A. Ableson")),
+    array("title" => "A Briefer Guide To Books About Briefs", "authors" => array("John Boxer")),
+);
+```
 
 Take, for example, the following snippet:
 
-    $nestedXMLWriter->Library(function ($Library) use ($books) {
-        foreach ($books as $book) {
-            $Library->Book(array("title" => $book["title"]), function ($Book) use ($book) {
-                foreach ($book["authors"] as $author) {
-                    $Book->Author($author);
-                }
-            });
-        }
-    });
+```php
+$nestedXMLWriter->Library(function ($Library) use ($books) {
+    foreach ($books as $book) {
+        $Library->Book(array("title" => $book["title"]), function ($Book) use ($book) {
+            foreach ($book["authors"] as $author) {
+                $Book->Author($author);
+            }
+        });
+    }
+});
+```
 
 Notice that we must manually pass data down through the anonymous functions with `use (...)`.
 
 If PHP had proper closures (à la JavaScript) then we could write this example as:
 
-    $nestedXMLWriter->Library(function ($Library) {
-        foreach ($books as $book) {
-            $Library->Book(array("title" => $book["title"]), function ($Book) {
-                foreach ($book["authors"] as $author) {
-                    $Book->Author($author);
-                }
-            });
-        }
-    });
+```php
+$nestedXMLWriter->Library(function ($Library) {
+    foreach ($books as $book) {
+        $Library->Book(array("title" => $book["title"]), function ($Book) {
+            foreach ($book["authors"] as $author) {
+                $Book->Author($author);
+            }
+        });
+    }
+});
+```
 
 But alas, anonymous functions don't work this way in PHP.
 
 If we're using PHP 5.4 (thanks to [Closure::bind](http://php.net/manual/en/closure.bind.php) and the [short array syntax](http://docs.php.net/manual/en/language.types.array.php#example-82)) we can write the following:
 
-    $nestedXMLWriter->Library(function () use ($books) {
-        foreach ($books as $book) {
-            $this->Book(["title" => $book["title"]], function () use ($book) {
-                foreach ($book["authors"] as $author) {
-                    $this->Author($author);
-                }
-            });
-        }
-    });
+```php
+$nestedXMLWriter->Library(function () use ($books) {
+    foreach ($books as $book) {
+        $this->Book(["title" => $book["title"]], function () use ($book) {
+            foreach ($book["authors"] as $author) {
+                $this->Author($author);
+            }
+        });
+    }
+});
+```
 
 Here we use `$this` to represent the current element and `[]` denotes an array.
 
