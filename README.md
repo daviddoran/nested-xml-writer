@@ -95,6 +95,8 @@ Or, if you installed composer globally:
 
 ## Tests
 
+[![Build Status](https://api.travis-ci.org/daviddoran/nested-xml-writer.png)](https://travis-ci.org/daviddoran/nested-xml-writer)
+
 The unit tests are contained in `test` and the configuration in `phpunit.xml`.
 
 After installing dependencies with composer, the following should run the tests:
