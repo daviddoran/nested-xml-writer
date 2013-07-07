@@ -77,6 +77,12 @@ Will give the following XML:
 </Book>
 ```
 
+How you get the XML string out will depend on the XMLWriter used. If you used a memory writer then:
+
+```php
+echo $writer->outputMemory();
+```
+
 ## Installing
 
 Once you've [installed Composer](http://getcomposer.org/doc/00-intro.md#installation-nix) simply run:
