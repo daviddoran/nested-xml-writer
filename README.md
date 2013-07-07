@@ -19,9 +19,9 @@ The `NestedXMLWriter` constructor takes an XMLWriter, which will actually write 
 $writer = new XMLWriter();
 $writer->openMemory();
 $writer->setIndent(true);
-```
 
 $xml = new NestedXMLWriter($writer);
+```
 
 To create an element, simply call the method of the same name:
 
