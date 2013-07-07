@@ -10,6 +10,57 @@ would allow arbitrarily nested XML to be created fluently. The result is that:
 - Well-formed XML is automatically output since there can be no `startElement` and `endElement` mismatches;
 - Using PHP 5.4 the API is simplified further with the use of `$this` to represent the current element.
 
+## Usage
+
+The `NestedXMLWriter` constructor takes an XMLWriter, which will actually write the XML.
+
+    # Create an in-memory XML writer (with pretty-printing)
+    $writer = new XMLWriter();
+    $writer->openMemory();
+    $writer->setIndent(true);
+
+    $xml = new NestedXMLWriter($writer);
+
+To create an element, simply call the method of the same name:
+
+    $xml->Root(); # <Root/>
+
+Use the following syntax if the element name would be an invalid PHP method:
+
+    $xml->{"Root-Element"}(); # <Root-Element/>
+
+There are three optional parameters that can be given **in any order**:
+
+- A scalar (e.g. `string` or `int`) sets the content of the element;
+- An array (e.g. `array("src" => "image.png")`) sets the attributes of the element;
+- A function gets called with the current element as the only parameter.
+
+An element with contents:
+
+    $xml->Snippet("The end."); # <Snippet>The end.</Snippet>
+
+An element with attributes:
+
+    $xml->Book(array("title" => "Book 1", "order" => 1)); # <Book title="Book 1" order="1"/>
+
+An element with attributes and contents:
+
+    $xml->Book("It all began...", array("title" => "A Story")); # <Book title="A Story">It all began...</Book>
+
+An element with children:
+
+    $xml->Book(array("title" => "A Story"), function ($Book) {
+        $Book->Author("John Doe", array("surname" => "Doe"));
+        $Book->Author("Jane Smith", array("surname" => "Smith"));
+    });
+
+Will give the following XML:
+
+    <Book title="A Story">
+     <Author surname="Doe">John Doe</Author>
+     <Author surname="Smith">Jane Smith</Author>
+    </Book>
+
 ## Installing
 
 Once you've [installed Composer](http://getcomposer.org/doc/00-intro.md#installation-nix) simply run:

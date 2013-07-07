@@ -1,53 +1,79 @@
 <?php
 
 class NestedWriterCase extends PHPUnit_Framework_TestCase {
-    /**
-     * @expectedException NestedWriter_EmptyDocumentException
-     */
-    public function testBlankDocument() {
-        $writer = $this->_new_memory_writer();
-        //Following triggers exception because no elements were written
-        $writer->output();
-    }
-
     public function testEmptyRootElement() {
-        $writer = $this->_new_memory_writer();
-        $writer->Root();
-        $this->assertEquals('<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL.'<Root/>', $writer->output());
+        list($writer, $xml) = $this->_new_memory_writer();
+        $xml->Root();
+        $this->assertEquals('<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL.'<Root/>', $writer->outputMemory());
     }
 
     public function testStringRootElement() {
-        $writer = $this->_new_memory_writer();
-        $writer->Root("Test string...");
-        $this->assertEquals('<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL.'<Root>Test string...</Root>', $writer->output());
+        list($writer, $xml) = $this->_new_memory_writer();
+        $xml->Root("Test string...");
+        $this->assertEquals('<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL.'<Root>Test string...</Root>', $writer->outputMemory());
     }
 
     public function testEmptyRootElementWithAttribute() {
-        $writer = $this->_new_memory_writer();
-        $writer->Root(array("attr" => "Test attribute..."));
-        $this->assertEquals('<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL.'<Root attr="Test attribute..."/>', $writer->output());
+        list($writer, $xml) = $this->_new_memory_writer();
+        $xml->Root(array("attr" => "Test attribute..."));
+        $this->assertEquals('<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL.'<Root attr="Test attribute..."/>', $writer->outputMemory());
     }
 
     public function testStringRootElementWithAttribute() {
-        $writer = $this->_new_memory_writer();
-        $writer->Root(array("attr" => "Test attribute..."), "Test string...");
-        $this->assertEquals('<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL.'<Root attr="Test attribute...">Test string...</Root>', $writer->output());
+        list($writer, $xml) = $this->_new_memory_writer();
+        $xml->Root(array("attr" => "Test attribute..."), "Test string...");
+        $this->assertEquals('<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL.'<Root attr="Test attribute...">Test string...</Root>', $writer->outputMemory());
     }
 
     public function testNestedEmptyElement() {
-        $writer = $this->_new_memory_writer();
-        $writer->Root(array("attr" => "Test attribute..."), function ($Root) {
+        list($writer, $xml) = $this->_new_memory_writer();
+        $xml->Root(array("attr" => "Test attribute..."), function ($Root) {
             $Root->Nested();
         });
-        $this->assertEquals('<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL.'<Root attr="Test attribute..."><Nested/></Root>', $writer->output());
+        $this->assertEquals('<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL.'<Root attr="Test attribute..."><Nested/></Root>', $writer->outputMemory());
     }
 
     public function testNestedElementWithAttribute() {
-        $writer = $this->_new_memory_writer();
-        $writer->Root(array("attr" => "Test attribute..."), function ($Root) {
+        list($writer, $xml) = $this->_new_memory_writer();
+        $xml->Root(array("attr" => "Test attribute..."), function ($Root) {
             $Root->Nested(array("nested-attr" => "Nested test attribute..."), "Test string...");
         });
-        $this->assertEquals('<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL.'<Root attr="Test attribute..."><Nested nested-attr="Nested test attribute...">Test string...</Nested></Root>', $writer->output());
+        $this->assertEquals('<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL.'<Root attr="Test attribute..."><Nested nested-attr="Nested test attribute...">Test string...</Nested></Root>', $writer->outputMemory());
+    }
+
+    public function testArgumentOrderIndifference() {
+        list($writer, $xml) = $this->_new_memory_writer();
+        $xml->Root(function ($Root) {
+            $Root->Empty();
+            $Root->String("String");
+            $Root->Attrs(array("one" => "one", "two" => "two"));
+            $Root->Attrs("String", array("one" => "one", "two" => "two"));
+            $Root->Attrs(array("one" => "one", "two" => "two"), "String");
+            $Root->NotEmpty(function ($NotEmpty) {
+                $NotEmpty->Empty();
+            });
+            $Root->NotEmpty(array("one" => "one"), function ($NotEmpty) {
+                $NotEmpty->Empty();
+            });
+            $Root->NotEmpty(function ($NotEmpty) {
+                $NotEmpty->Empty();
+            }, array("one" => "one"));
+        });
+
+        $target =
+            '<?xml version="1.0" encoding="UTF-8"?>' . PHP_EOL .
+            '<Root>' .
+                '<Empty/>' .
+                '<String>String</String>' .
+                '<Attrs one="one" two="two"/>' .
+                '<Attrs one="one" two="two">String</Attrs>' .
+                '<Attrs one="one" two="two">String</Attrs>' .
+                '<NotEmpty><Empty/></NotEmpty>' .
+                '<NotEmpty one="one"><Empty/></NotEmpty>' .
+                '<NotEmpty one="one"><Empty/></NotEmpty>' .
+            '</Root>';
+
+        $this->assertEquals($target, $writer->outputMemory());
     }
 
     public function testNamespacedDocument() {
@@ -63,14 +89,14 @@ class NestedWriterCase extends PHPUnit_Framework_TestCase {
             "xmlns:bar" => "http://foo.org/ns/bar#"
         );
 
-        $writer = $this->_new_memory_writer();
+        list($writer, $xml) = $this->_new_memory_writer();
 
-        $writer->Sample($namespaces, function ($Sample) {
+        $xml->Sample($namespaces, function ($Sample) {
             $Sample->{"foo:Quz"}("stuff here")
                    ->{"bar:Quz"}("stuff there");
         });
 
-        $this->assertEquals($target, $writer->output());
+        $this->assertEquals($target, $writer->outputMemory());
     }
 
     /**
@@ -91,15 +117,15 @@ class NestedWriterCase extends PHPUnit_Framework_TestCase {
                 '<Sibling2/>' .
             '</Root>';
 
-        $writer = $this->_new_memory_writer();
-        $writer->Root(function () {
+        list($writer, $xml) = $this->_new_memory_writer();
+        $xml->Root(function () {
             $this->Sibling1(function () {
                 $this->Child1();
             });
             $this->Sibling2();
         });
 
-        $this->assertEquals($target, $writer->output());
+        $this->assertEquals($target, $writer->outputMemory());
     }
 
     /**
@@ -111,6 +137,6 @@ class NestedWriterCase extends PHPUnit_Framework_TestCase {
         $writer->setIndent(false);
         $writer->setIndentString("");
         $writer->startDocument("1.0", "UTF-8");
-        return new NestedXMLWriter($writer);
+        return array($writer, new NestedXMLWriter($writer));
     }
 }
