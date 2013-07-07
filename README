@@ -1,0 +1,87 @@
+# Nested XML Writer
+
+A small library providing a fluent interface to PHP's XMLWriter class.
+
+The idea for this interface was that the combination of magic `__call` methods and anonymous functions
+would allow arbitrarily nested XML to be created fluently. The result is that:
+
+- There is only one method, the name of the element to be created;
+- The common cases (element containing text, empty element, an element with children) are very simple;
+- Well-formed XML is automatically output since there can be no `startElement` and `endElement` mismatches;
+- Using PHP 5.4 the API is simplified further with the use of `$this` to represent the current element.
+
+## Installing
+
+Once you've [installed Composer](http://getcomposer.org/doc/00-intro.md#installation-nix) simply run:
+
+    php composer.phar install
+
+Or, if you installed composer globally:
+
+    composer install
+
+## Tests
+
+The unit tests are contained in `test` and the configuration in `phpunit.xml`.
+
+After installing dependencies with composer, the following should run the tests:
+
+    ./vendor/bin/phpunit
+
+## Discussion
+
+The usefulness of this library is severely diminished by PHP's lack of proper
+closures (instead providing only anonymous functions with explicit capture).
+
+Assuming the following array of data (and a NestedXMLWriter instance `$nestedXMLWriter`):
+
+    $books = array(
+        array("title" => "A Brief Guide To Books", "authors" => array("John Doe", "Alan A. Ableson")),
+        array("title" => "A Briefer Guide To Books About Briefs", "authors" => array("John Boxer")),
+    );
+
+Take, for example, the following snippet:
+
+    $nestedXMLWriter->Library(function ($Library) use ($books) {
+        foreach ($books as $book) {
+            $Library->Book(array("title" => $book["title"]), function ($Book) use ($book) {
+                foreach ($book["authors"] as $author) {
+                    $Book->Author($author);
+                }
+            });
+        }
+    });
+
+Notice that we must manually pass data down through the anonymous functions with `use (...)`.
+
+If PHP had proper closures (à la JavaScript) then we could write this example as:
+
+    $nestedXMLWriter->Library(function ($Library) {
+        foreach ($books as $book) {
+            $Library->Book(array("title" => $book["title"]), function ($Book) {
+                foreach ($book["authors"] as $author) {
+                    $Book->Author($author);
+                }
+            });
+        }
+    });
+
+But alas, anonymous functions don't work this way in PHP.
+
+If we're using PHP 5.4 (thanks to [Closure::bind](http://php.net/manual/en/closure.bind.php) and the [short array syntax](http://docs.php.net/manual/en/language.types.array.php#example-82)) we can write the following:
+
+    $nestedXMLWriter->Library(function () use ($books) {
+        foreach ($books as $book) {
+            $this->Book(["title" => $book["title"]], function () use ($book) {
+                foreach ($book["authors"] as $author) {
+                    $this->Author($author);
+                }
+            });
+        }
+    });
+
+Here we use `$this` to represent the current element and `[]` denotes an array.
+
+## License
+
+This project is released under the MIT License - see the LICENSE file for details.
