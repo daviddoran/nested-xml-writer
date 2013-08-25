@@ -1,4 +1,4 @@
-# Nested XML Writer
+# Nested XML Writer [![Build Status](https://api.travis-ci.org/daviddoran/nested-xml-writer.png)](https://travis-ci.org/daviddoran/nested-xml-writer)
 
 A small library providing a fluent interface to PHP's XMLWriter class.
 
@@ -94,8 +94,6 @@ Or, if you installed composer globally:
     composer install
 
 ## Tests
-
-[![Build Status](https://api.travis-ci.org/daviddoran/nested-xml-writer.png)](https://travis-ci.org/daviddoran/nested-xml-writer)
 
 The unit tests are contained in `test` and the configuration in `phpunit.xml`.
 
